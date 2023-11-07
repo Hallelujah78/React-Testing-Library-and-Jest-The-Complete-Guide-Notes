@@ -120,10 +120,23 @@ test("clicking on the button loads 6 more products", async () => {
 
   ## 8. Handling User Input
 
+  - see lesson 10 - completed users project
+
   ## 9. Rendering the List of users
+
+  - see lesson 10 - completed users project
 
 ## 10. Completed Users Project
 
+- link to download what we built in lessons 7-9
+
 ## 11. Our first test
+
+- Test writing process
+  - Pick out one component to test by itself
+  - make a test file for the component if one does not exist
+  - decide what the important parts of the component are
+  - write a test to make sure each part works as expected
+  - run tests at the command line
 
 ## 12. Element Query System
