@@ -2,6 +2,8 @@
 
 - course commenced 6/11/23 - 20:27pm.
 
+---
+
 ## 1. How to Get Help
 
 - just intro
@@ -11,6 +13,8 @@
 ## 2. Join Our Community!
 
 - intro stuff
+
+---
 
 ---
 
@@ -61,6 +65,8 @@ test("clicking on the button loads 6 more products", async () => {
 
 ---
 
+---
+
 ## 4. A few critical questions
 
 - What were all those import statements?
@@ -96,6 +102,8 @@ test("clicking on the button loads 6 more products", async () => {
     - `expect(headings).toHaveLength(6)` - there should be 6 headings
       - anything other than 6 fails the test
 
+---
+
 ## 5. Project Setup
 
 - what we'll do now
@@ -110,25 +118,37 @@ test("clicking on the button loads 6 more products", async () => {
   - I'll try to follow along with Vite
   - create a new vite React project called 'users'
 
-  ## 6. Quick Note
+---
 
-  - filler
+## 6. Quick Note
 
-  ## 7. Adding the Form
+- filler
 
-  - see lesson 10 - completed users project
+---
 
-  ## 8. Handling User Input
+## 7. Adding the Form
 
-  - see lesson 10 - completed users project
+- see lesson 10 - completed users project
 
-  ## 9. Rendering the List of users
+---
 
-  - see lesson 10 - completed users project
+## 8. Handling User Input
+
+- see lesson 10 - completed users project
+
+---
+
+## 9. Rendering the List of users
+
+- see lesson 10 - completed users project
+
+---
 
 ## 10. Completed Users Project
 
 - link to download what we built in lessons 7-9
+
+---
 
 ## 11. Our first test
 
@@ -188,6 +208,8 @@ Time:        3.201 s
 Ran all test suites.
 ```
 
+---
+
 ## 12. Element Query System
 
 - what happens when we run our tests?
@@ -217,6 +239,8 @@ Ran all test suites.
   - getByLabelText()
 - the names of the functions have a lot of meaning in terms of which to use when
 
+---
+
 ## 13. Understanding ARIA roles
 
 - getAllByRole and getByRole
@@ -230,6 +254,8 @@ Ran all test suites.
 - this ARIA role system is the preferred way of finding elements that have been rendered by our components
   - RTL pushes you in this direction
   - this means we need to understand ARIA role system
+
+---
 
 ## 14. Understanding Jest matchers
 
@@ -264,11 +290,15 @@ expect(inputs).toHaveLength(2);
     - has text, has attribute, etc
 - a full list of RTL jest-dom matchers is available [here](https://github.com/testing-library/jest-dom#custom-matchers "a list of jest-dom custom matchers on github")
 
+---
+
 ## 15. Test was not wrapped in act(...) warning and test failure
 
 - a quick note about warnings related to act(...). This relates to RTL v14 update and CRA not updating its version of RTL.
 - user events are now async
   - just have to make the test callback async and use await a bunch
+
+---
 
 ## 16. Simulating User Events
 
@@ -283,6 +313,8 @@ user.click(element);
 user.keyboard("asdf");
 user.keyboard("{Enter}");
 ```
+
+---
 
 ## 17. Recording function calls
 
@@ -384,6 +416,8 @@ test("it calls onUserAdd when form is submitted", async () => {
 });
 ```
 
+---
+
 ## 18 Introducing Mock Function
 
 - we're fixing up our previous test implementation here
@@ -431,6 +465,8 @@ expect(mock).toHaveBeenCalledWith({ name: "gavan", email: "gavan@email.com" });
 - side note
   - installed nvm to let us update node and npm from the command line going forward
 
+---
+
 ## 19. Querying elements by labels
 
 - the next issue is:
@@ -470,6 +506,8 @@ const emailInput = screen.getByRole("textbox", { name: /enter email/i });
 - more flexible
 - we can change order or add more inputs and tests won't break
 
+---
+
 ## 20. Testing UserList
 
 - receives array of users each with name and email
@@ -501,6 +539,8 @@ test("render the name and email of each user", async () => {
 ```
 
 - how do we work out what the best way to find our rows is?
+
+---
 
 ## 21. Getting Help with query functions
 
@@ -543,6 +583,296 @@ expect(rows).toHaveLength(2);
 
 - however, there's a header row, so we fail the test
 
+---
+
 ## 22 Query Function escape hatches
+
+- it may not be possible to find only the elements we need solely using ARIA roles
+- fallbacks (escape hatch) when role doesn't work that well
+  - data-testid
+  - container.querySelector()
+- using data-testid
+  - we add a `data-testid` attribute to our actual component
+  - UserList.jsx:
+
+```js
+return (
+  <Wrapper>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody data-testid="users">{renderedUsers}</tbody>
+  </Wrapper>
+);
+```
+
+- add `within` to our test file:
+
+```js
+import { render, screen, within } from "@testing-library/react";
+```
+
+- update the query:
+
+```js
+// find the rows
+const rows = within(screen.getByTestId("users")).getAllByRole("row");
+```
+
+- adding data-testid to our element means we can find it in our test
+- when we find it, then we can find elements within it that match our role
+- we're modifying the component purely to test it
+  - not necessarily a great solution
+
+---
+
+## 23. Another query function fallback
+
+- `container.querySelector()`
+- when we call `render()` we get back an obj that has helper properties
+  - one of these is `container`
+  - so we can destructure:
+
+```js
+const { container } = render(<UserList users={users} />);
+```
+
+- container is a ref to a html element auto added into our component
+- you can see this extra element in Testing Playground, there is an extra outer div element added
+- we can do this:
+
+```js
+// find the rows
+const rows = container.querySelectorAll("tbody tr");
+```
+
+- note, data-testid is more preferred
+
+---
+
+## 24. Testing Table Contents
+
+- find the cells and make sure the data is appearing on screen:
+
+```js
+test("render the name and email of each user", () => {
+  const users = [
+    { name: "gavan", email: "gavan@email.com" },
+    { name: "sam", email: "sam@email.com" },
+  ];
+  // render
+  render(<UserList users={users} />);
+  // find
+  for (let user of users) {
+    const name = screen.getByRole("cell", { name: user.name });
+    const email = screen.getByRole("cell", { name: user.email });
+    expect(name).toBeInTheDocument();
+    expect(email).toBeInTheDocument();
+  }
+});
+```
+
+---
+
+## 25. Avoiding BeforeEach
+
+- we have two tests in UserList and both tests share code. They both declare a list of users and render a component
+- we can extract the duplicate code into a helper function
+- the helper function:
+
+```js
+const renderComponent = () => {
+  // render the component
+  const users = [
+    { name: "gavan", email: "gavan@email.com" },
+    { name: "sam", email: "sam@email.com" },
+  ];
+  render(<UserList users={users} />);
+  return { users };
+};
+```
+
+- we can now call this in each test
+- Jest provides a `beforeEach()` function that you can use for this
+  - you will get a warning if you try to render a component inside of a beforeEach
+  - RTL prefers writing fns like renderComponent instead
+- complete UserList.test.js:
+
+```js
+import { render, screen, within } from "@testing-library/react";
+import UserList from "./UserList";
+
+const renderComponent = () => {
+  // render the component
+  const users = [
+    { name: "gavan", email: "gavan@email.com" },
+    { name: "sam", email: "sam@email.com" },
+  ];
+  render(<UserList users={users} />);
+  return { users };
+};
+
+test("render one row per user", () => {
+  renderComponent();
+  // render the component
+
+  // find the rows
+  const rows = within(screen.getByTestId("users")).getAllByRole("row");
+
+  // assertion: correct number of rows in the table
+  expect(rows).toHaveLength(2);
+});
+
+test("render the name and email of each user", () => {
+  const { users } = renderComponent();
+  // find
+  for (let user of users) {
+    const name = screen.getByRole("cell", { name: user.name });
+    const email = screen.getByRole("cell", { name: user.email });
+    expect(name).toBeInTheDocument();
+    expect(email).toBeInTheDocument();
+  }
+});
+```
+
+---
+
+## 26. Testing the whole app
+
+- now we test App.jsx
+- create App.test.js
+- we use `screen.debug()` here which prints our html out to the terminal
+
+```js
+<body>
+  <div>
+    <form>
+      <div>
+        <label for="name">Enter name</label>
+        <input id="name" type="text" value="jane" />
+      </div>
+      <div>
+        <label for="email">Enter email</label>
+        <input id="email" type="email" value="jane@email.com" />
+      </div>
+      <button>Add User</button>
+    </form>
+    <hr />
+    <table class="sc-bdnyFh juQPKC">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody data-testid="users">
+        <tr>
+          <td>jane</td>
+          <td>jane@email.com</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+```
+
+- this allows us to see that we are going down the right path
+  - we have selected the inputs, entered text, clicked the submit button and our user is being rendered to the screen
+- our complete App.test.js file:
+
+```js
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import App from "./App.jsx";
+
+test("can receive a new user and show it on a list", async () => {
+  // render the component
+  render(<App />);
+  // find input for name and email and find button
+
+  const nameInput = screen.getByRole("textbox", { name: /enter name/i });
+  const emailInput = screen.getByRole("textbox", { name: /enter email/i });
+  const button = screen.getByRole("button");
+
+  // enter text in the inputs
+  await userEvent.click(nameInput);
+  await userEvent.keyboard("jane");
+  await userEvent.click(emailInput);
+  await userEvent.keyboard("jane@email.com");
+
+  // find submit button and click it
+  await userEvent.click(button);
+
+  // make sure we can find new name and email in the table
+  const name = screen.getByRole("cell", { name: "jane" });
+  const email = screen.getByRole("cell", { name: "jane@email.com" });
+  // assertions
+  expect(name).toBeInTheDocument();
+  expect(email).toBeInTheDocument();
+});
+```
+
+---
+
+## 27. A touch of test-driven development
+
+- when we submit our form, our inputs should 'empty out' or be set to empty strings
+- we will write the test to make sure this is happening first, and then we will write the code to make it happen (test-driven)
+- since this has to do with the form state, we can add a test to UserForm.test.js
+- since we're rendering UserForm, it expects an onUserAdd
+  - we've already tested that this onUserAdd callback is run with correct args
+  - in this case we don't care that it is called
+  - therefore, we can simply provide an empty callback:
+  ```js
+  render(<UserForm onUserAdd={() => {}} />);
+  ```
+- interestingly, we duplicate a lot of code here. here is the new test in UserForm.test.js:
+
+```js
+test("our name and email input fields should be set to empty strings after the form has been submitted", async () => {
+  render(<UserForm onUserAdd={() => {}} />);
+
+  const nameInput = screen.getByRole("textbox", { name: /enter name/i });
+  const emailInput = screen.getByRole("textbox", { name: /enter email/i });
+  const button = screen.getByRole("button");
+
+  await userEvent.click(nameInput);
+  await userEvent.keyboard("jane");
+  await userEvent.click(emailInput);
+  await userEvent.keyboard("jane@email.com");
+
+  await userEvent.click(button);
+
+  expect(nameInput).toHaveValue("");
+  expect(emailInput).toHaveValue("");
+});
+```
+
+- update our UserForm to clear the values/state
+  - our new test passes!
+
+## 28. Feature Implementation
+
+- did this above, two state setters!
+
+## 29. Introducing RTL Book
+
+- rtl book is a CLI interactive cheat sheet for query functions and matchers `rtl-book`
+- running rtl-book:
+
+```js
+npx rtl-book serve roles-notes.js
+```
+
+- roles-notes is just a name we give to a file that will be created by running the command
+- running the command creates a new file called roles-notes.js and saves notes in there
+  - we can then view in the browser
+- rtl-book is actually pretty cool
+  - it's an interactive code env with links to docs for various libraries/testing frameworks
+
+## 30. A few notes on RTL Book
 
 -
