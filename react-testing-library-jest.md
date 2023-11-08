@@ -334,7 +334,215 @@ Ran all test suites matching /userform.test.js/i.
 ```
 
 - our tests are working, but it's not the best implementation and we'll address this later
+- our UserForm.test.js so far:
 
-## 18 Introducting Mock Function
+```js
+import { render, screen } from "@testing-library/react";
+import user from "@testing-library/user-event";
+import UserForm from "./UserForm";
+
+test("it shows two inputs and a button", async () => {
+  // render the component
+  render(<UserForm />);
+
+  // manipulate the component or find an element in it
+  const inputs = screen.getAllByRole("textbox");
+  const button = screen.getByRole("button");
+
+  // Assertion - make sure component is doing what we expect it to do
+  expect(inputs).toHaveLength(2);
+  expect(button).toBeInTheDocument();
+});
+
+test("it calls onUserAdd when form is submitted", async () => {
+  // not the best implementation
+  const argList = [];
+  const callBack = (...args) => {
+    argList.push(args);
+  };
+  // try to render my component
+  render(<UserForm onUserAdd={callBack} />);
+
+  // find the two inputs
+  const [nameInput, emailInput] = screen.getAllByRole("textbox");
+
+  // simulate typing in a name
+  await user.click(nameInput);
+  await user.keyboard("gavan");
+
+  // simulate typing in an email
+  await user.click(emailInput);
+  await user.keyboard("gavan@email.com");
+
+  // find the button
+  const button = screen.getByRole("button");
+
+  // simulate clicking the button to submit the form
+  user.click(button);
+
+  // assertion to make sure 'onUserAdd' gets called with email and name
+});
+```
+
+## 18 Introducing Mock Function
+
+- we're fixing up our previous test implementation here
+- argList and the callback are a hacky way to test that our function is called and called with correct args
+- Jest has a tool to check just this scenario (function is called with correct args)
+  - mock functions
+- mock function
+  - fake function that doesn't do anything
+  - records when it gets called and the args it was called with
+  - used very often when we need to make sure a component calls a callback
+- steps
+  - we create a mock function
+  - we pass it down as onUserAdd prop to UserForm
+  - mock func will have internal storage
+    - will record how many times called
+    - different args it receives when called
+    - we'll simulate form submission
+    - our mock func will get called
+      - mock func will store arg it received
+      - increase counter to record how many times called
+      - we can write assertions about number of times called and args etc
+- delete arg list and callback
+- create a mock function like so:
+
+```js
+const mock = jest.fn();
+```
+
+- mock is now a function
+- we pass it down to our component:
+
+```js
+render(<UserForm onUserAdd={mock} />);
+```
+
+- jest has builtin matchers for checking mock functions
+
+```js
+expect(mock).toHaveBeenCalled();
+expect(mock).toHaveBeenCalledWith({ name: "gavan", email: "gavan@email.com" });
+```
+
+- running our tests, all pass
+  - we had to stick await in front of our `user.click(button)`
+- side note
+  - installed nvm to let us update node and npm from the command line going forward
+
+## 19. Querying elements by labels
+
+- the next issue is:
+
+```js
+// find the two inputs
+const [nameInput, emailInput] = screen.getAllByRole("textbox");
+```
+
+- we're assuming there will be only two inputs
+  - we might reorder the inputs, in which case nameInput will reference the email input in the DOM
+  - we might add or remove inputs
+- any changes to our UserForm might make our tests begin to fail
+  - this test is brittle - easy to break
+    - changes will cause the test to fail even though the component may be working correctly
+- a better way
+  - need to understand forms, labels and inputs better
+  - basic html stuff
+    - if a label's 'for' attribute matches an input's 'id,' clicking on the label will focus the input
+- if we make sure our label has a 'htmlFor' and the input has a matching id then we can:
+
+```js
+screen.getByLabelText(/enter email/i);
+screen.getByRole("textbox", { name: /enter email/i });
+```
+
+- getByRole is using a filter object with regular expression to match the label text
+- rtl prefers or recommends roles
+- updating our test:
+
+```js
+// find the two inputs
+const nameInput = screen.getByRole("textbox", { name: /enter name/i });
+const emailInput = screen.getByRole("textbox", { name: /enter email/i });
+```
+
+- more flexible
+- we can change order or add more inputs and tests won't break
+
+## 20. Testing UserList
+
+- receives array of users each with name and email
+- renders table row, 2 data cells for every user
+- important parts of this component?
+  - shows one line per user
+  - shows correct name and email for each user
+- our code so far
+
+```js
+import { render, screen } from "@testing-library/react";
+import UserList from "./UserList";
+
+test("render one row per user", async () => {
+  // render the component
+  const users = [
+    { name: "gavan", email: "gavan@email.com" },
+    { name: "sam", email: "sam@email.com" },
+  ];
+  render(<UserList users={users} />);
+  // find the rows
+
+  // assertion: correct number of rows in the table
+});
+
+test("render the name and email of each user", async () => {
+  render(<UserList />);
+});
+```
+
+- how do we work out what the best way to find our rows is?
+
+## 21. Getting Help with query functions
+
+- memorizing query functions to find elements is hard
+- can use this helper function:
+
+```js
+screen.logTestingPlaygroundURL();
+```
+
+- this creates html rendered by your component and creates a link to view the html in the testing playground tool
+  - helps you to write queries - functions to find elements
+- adding this to our test file and running we get:
+
+```js
+https://testing-playground.com/#markup=DwEwlgbgfMAuCGAjANgUwAQGNnwM64F4AiXTAWkRADsBPAMQAt0ArAVwEUAFAaQGEiYsBqnghBAJ0EMoAOXgBbVMAD0QqVACi8+GGQq1+yfuGjBiAPYgaEwWIDm8CPCr6xce4+cABVNt0A6THN5VxhVI1gIsVwFUPcoGPkfP2RA4LjwsNgLKyykNDDwaCA
+```
+
+- the long string represents html generated by component in enccoded format
+- Testing Playground notes
+  - terminal on left has querySelector code that will probably work to select ouru element 100% of the time
+  - suggested query on right is green or blue and it may or may not be possible to use it directly as suggested
+  - another downside, we are trying to find the rows but we can't click on the row, only the cells
+    - can add custom styling to the html directly in top-left panel
+    - add padding, and will be easier to click
+- add this inline to the element you want to click on and find
+
+```js
+style = "border: 10px solid red; display: block;";
+```
+
+- our find and assertion:
+
+```js
+const rows = screen.getAllByRole("row");
+
+// assertion: correct number of rows in the table
+expect(rows).toHaveLength(2);
+```
+
+- however, there's a header row, so we fail the test
+
+## 22 Query Function escape hatches
 
 -
