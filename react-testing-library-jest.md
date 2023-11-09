@@ -1047,3 +1047,127 @@ expect(searchInput).toBeInTheDocument();
 ```
 
 - and it works
+
+---
+
+## 35. Directly Assigning an Accessible Name
+
+- example where this would be useful is a button that wraps an icon
+  - there is no accessible text
+
+```js
+      <button>
+        <svg />
+      </button>
+      <button>
+        <svg />
+      </button>
+```
+
+- we can add `aria-label="ourName"` to our element
+
+```js
+      <button aria-label="sign in">
+        <svg />
+      </button>
+      <button aria-label="sign out">
+        <svg />
+      </button>
+```
+
+- and so the following passes:
+
+```js
+test("find element based on label", () => {
+  render(<IconButtons />);
+
+  const buttonOne = screen.getByRole("button", { name: /sign in/i });
+  const buttonTwo = screen.getByRole("button", { name: /sign out/i });
+  expect(buttonOne).toBeInTheDocument();
+  expect(buttonTwo).toBeInTheDocument();
+});
+```
+
+## 36. Completed Roles Notebook
+
+- just a link to download complete roles-notes with comments by Stephen
+
+## 37 Deeper into query functions
+
+- function names indicate various things
+- query functions always start with one of the following:
+  - getBy
+  - getAllBy
+  - queryBy
+  - queryAllBy
+  - findBy
+  - findAllBy
+- single element
+  - getBy throws if not 1 match
+  - queryBy
+    - return null if no match
+    - throws if more than 1 match
+  - findBy
+    - throws if more/less than one element
+    - looks for element over span of 1 second (is asynchronous)
+- multiple elements
+  | name | 0 matches | 1 match | > 1 match | notes |
+  | ---- | -------- | ------- | --------- | ----- |
+  | getAllBy | Throw | []Element | []Element | |
+  | queryAllBy | [] | []Element | []Element | |
+  | findAllBy | Throw | []Element | []Element | Async - over 1 second|
+
+- when to use each type of query
+  | goal of test | Use |
+  | ------------ | --- |
+  | prove element exists | getBy, getAllBy |
+  | prove element does not exist | queryBy, queryAllBy |
+  | make sure element eventually exists | findBy, findAllBy |
+
+## 38. getBy, queryBy, findBy
+
+-
+
+## notes
+
+- use aria-label when there is no text in an element
+- ARIA roles are the preferred way of finding elements
+- where a component receives a callback prop, we can test with a mock function:
+
+```js
+const mock = jest.fn();
+render(<UserForm onUserAdd={mock} />);
+expect(mock).toHaveBeenCalled();
+expect(mock).toHaveBeenCalledWith({ name: "gavan", email: "gavan@email.com" });
+```
+
+- we can find an input by an associated label
+
+```js
+screen.getByRole("textbox", { name: /enter email/i });
+```
+
+- we can use the Testing Playground to decide the best way to select an element:
+
+```js
+screen.logTestingPlaygroundURL();
+```
+
+- you can add inline styles to elements to be able to click on them in the playground
+- fallbacks when roles aren't working:
+  - data-testid (preferred)
+  - container.querySelector
+
+```js
+const rows = within(screen.getByTestId("users")).getAllByRole("row");
+```
+
+- we've added a data-testid of users to a container element for our rows
+- you can avoid code duplication where, for example, multiple tests require a component to be rendered and also require an array of data to be passed to the component
+  - use a helper function like `renderComponent` that renders the component and returns the array of data
+- `screen.debug()` prints our rendered html elements to the terminal
+  - useful to see that stuff is working
+    - rendering
+    - selecting
+    - inputting/clicking
+    - stuff rendered based on input/clicking
