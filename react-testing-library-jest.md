@@ -1115,7 +1115,7 @@ test("find element based on label", () => {
   | ---- | -------- | ------- | --------- | ----- |
   | getAllBy | Throw | []Element | []Element | |
   | queryAllBy | [] | []Element | []Element | |
-  | findAllBy | Throw | []Element | []Element | Async - over 1 second|
+  | findAllBy | Throw | []Element | []Element | Async - over 1 second |
 
 - when to use each type of query
   | goal of test | Use |
@@ -1126,7 +1126,90 @@ test("find element based on label", () => {
 
 ## 38. getBy, queryBy, findBy
 
--
+- here we explore using getBy, findBy and queryBy
+
+```js
+const ColorList = () => {
+  return (
+    <ul>
+      <li>red</li>
+
+      <li>blue</li>
+      <li>green</li>
+    </ul>
+  );
+};
+
+render(<ColorList />);
+```
+
+- how do these methods behave when we find 0 elements?
+
+```js
+import { render, screen } from "@testing-library/react";
+
+test("", async () => {
+  // render the ColorList
+  render(<ColorList />);
+  expect(() => {
+    screen.getByRole("textbox").toThrow();
+  });
+});
+```
+
+- this test passes, because we expect getByRole to throw an error when it finds 0 elements
+
+```js
+expect(screen.queryByRole("textbox")).toEqual(null);
+```
+
+- this test assumes queryByRole finds 0 elements and this will return null, so the test passes
+- findByRole is a little more tricky
+
+```js
+let errorThrown = false;
+try {
+  await screen.findByRole("textbox");
+} catch (err) {
+  errorThrown = true;
+}
+expect(errorThrown).toEqual(true);
+```
+
+- Stephen says this is a workaround regarding confirming an async test throws in 'this browser environment'
+  - not sure if he means his rtl-book application, or just jest/rtl in general
+
+## 39. More on single queries
+
+- here we explore what happens when findBy, queryBy, and getBy find 1 element and multiple elements
+- remember, these are queries for finding single elements
+- tests pass when finding one element:
+
+```js
+expect(screen.getByRole("list")).toBeInTheDocument();
+expect(screen.queryByRole("list")).toBeInTheDocument();
+expect(await screen.findByRole("list")).toBeInTheDocument();
+```
+
+- if any of the single queries finds more than one element, we expect them to throw
+
+```js
+expect(() => {
+  screen.getByRole("listitem");
+}).toThrow();
+
+expect(() => {
+  screen.queryByRole("listitem");
+}).toThrow();
+
+let errorThrown = false;
+try {
+  await screen.findByRole("listitem");
+} catch (err) {
+  errorThrown = true;
+}
+expect(errorThrown).toEqual(true);
+```
 
 ## notes
 
