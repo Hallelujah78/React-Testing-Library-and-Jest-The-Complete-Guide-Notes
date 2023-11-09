@@ -854,9 +854,13 @@ test("our name and email input fields should be set to empty strings after the f
 - update our UserForm to clear the values/state
   - our new test passes!
 
+---
+
 ## 28. Feature Implementation
 
 - did this above, two state setters!
+
+---
 
 ## 29. Introducing RTL Book
 
@@ -873,6 +877,173 @@ npx rtl-book serve roles-notes.js
 - rtl-book is actually pretty cool
   - it's an interactive code env with links to docs for various libraries/testing frameworks
 
+---
+
 ## 30. A few notes on RTL Book
 
--
+- close with ctrl+c
+- open it again using `npx rtl-book serve roles-notes.js`
+- the order of the code cells matters
+  - you define a component in a cell
+  - you can test it in a cell further down, but not vice-versa
+  - in RTL Book we can run render to show the component in a preview window - it doesn't have to be only run in a test
+
+---
+
+## 31 partial rule list
+
+- we create a component in RTL book and render it
+
+```js
+const RoleExample = () => {
+  return (
+    <div>
+      <a href="/">Link</a>
+      <button>button</button>
+      <footer>content info</footer>
+      <h1>heading</h1>
+      <header>banner</header>
+      <img src="" alt="description" /> Img
+      <input type="checkbox" /> Checkbox
+      <input type="number" /> Spinbutton
+      <input type="radio" /> Radio
+      <input type="text" /> Textbox
+      <li>list item</li>
+      <ul>listgroup</ul>
+    </div>
+  );
+};
+
+render(<RoleExample />);
+```
+
+---
+
+## 32 finding elements by role
+
+- we write a test in RTL book:
+
+```js
+test("can find element by role", async () => {
+  // render the component
+  render(<RoleExample />);
+  const roles = [
+    "link",
+    "button",
+    "contentinfo",
+    "heading",
+    "banner",
+    "img",
+    "checkbox",
+    "spinbutton",
+    "radio",
+    "textbox",
+    "listitem",
+    "listgroup",
+  ];
+  for (let role of roles) {
+    const element = screen.getByRole(role);
+    expect(element).toBeInTheDocument();
+  }
+});
+```
+
+- purpose is to see how we can find various elements by role
+- listgroup fails because the actual element role is 'list'
+- some roles are less obvious:
+
+  - contentinfo = footer
+  - banner = header
+  - spinbutton = input with a type of number
+
+  ***
+
+## 33. finding by accessible names
+
+- how do you find a single element when there are two or more elements with the same roles?
+- you can use accessible name
+- not all elements have accessible names
+  - inputs are self-closing and don't have text inside
+  - the accessible name is the text inside the element
+
+```js
+<button>click</button>
+```
+
+- the word 'click' is the accessible name of the button above
+- to select or find a button with text submit:
+
+```js
+test("can select by accessible name", async () => {
+  // render the component
+  render(<AccessibleName />);
+  const submitButton = screen.getByRole("button", { name: "submit" });
+});
+```
+
+- better to often use a regular expression
+
+```js
+test("can select by accessible name", async () => {
+  // render the component
+  render(<AccessibleName />);
+  const submitButton = screen.getByRole("button", { name: /submit/i });
+});
+```
+
+- finding two buttons with different accessible names:
+
+```js
+test("can select by accessible name", async () => {
+  // render the component
+  render(<AccessibleName />);
+  const submitButton = screen.getByRole("button", { name: /submit/i });
+  const cancelButton = screen.getByRole("button", { name: /cancel/ });
+  expect(submitButton).toBeInTheDocument();
+  expect(cancelButton).toBeInTheDocument();
+});
+```
+
+## 34. Linking inputs to labels
+
+- in some cases, inputs, there is no text in between.
+- we can use accessible names with inputs by adding a label
+- component to test:
+
+```js
+const MoreNames = () => {
+  return (
+    <div>
+      <label>Email</label>
+      <input type="text" id="email" />
+      <label>Search</label>
+      <input type="text" />
+    </div>
+  );
+};
+
+render(<MoreNames />);
+```
+
+- test:
+
+```js
+const emailInput = screen.getByRole("textbox", { name: /email/i });
+```
+
+- fails because there is no link between the label and the input
+- we need to use `htmlFor` and `id`
+
+```js
+   <label htmlFor="email">Email</label>
+      <input type="text" id="email" />
+```
+
+- and assertions:
+
+```js
+expect(emailInput).toBeInTheDocument();
+expect(searchInput).toBeInTheDocument();
+```
+
+- and it works
