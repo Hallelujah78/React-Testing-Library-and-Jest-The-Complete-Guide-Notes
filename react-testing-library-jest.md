@@ -1211,7 +1211,102 @@ try {
 expect(errorThrown).toEqual(true);
 ```
 
-## notes
+## 40. Multiple element variations
+
+- intentionally looking for multiple elements
+- our tests:
+
+```js
+test("getAllBy, queryAllBy, findAllBy ", async () => {
+  // render the ColorList
+  render(<ColorList />);
+
+  expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  expect(screen.queryAllByRole("listitem")).toHaveLength(3);
+  expect(await screen.queryAllByRole("listitem")).toHaveLength(3);
+});
+```
+
+- getAllBy and findAllBy will throw if you find 0 elements
+- queryAllBy returns empty array if zero found
+
+## 42. When to use These Queries
+
+- when to Use
+  | goal of test | Use |
+  | ------------ | --- |
+  | prove element exists | getBy, getAllBy |
+  | prove element does not exist | queryBy, queryAllBy |
+  | make sure element eventually exists | findBy, findAllBy |
+- if getByRole finds 0 elements, it throws an error and the test fails
+  - any later assertion is not executed (it's pointless), since getByRole throws an error and later code is not executed
+- we should not, however, write tests that skip the assertion using just screen.getByRole
+  - if later on you or someone else changes the getByRole to queryByRole, the test will pass as there is no assertion
+- our test:
+
+```js
+const element = screen.getByRole("list");
+expect(element).toBeInTheDocument();
+```
+
+- using queryByRole to prove an element does not exist
+  - it returns null and does not throw if number of elements is zero
+- our test:
+
+```js
+const element = screen.queryByRole("textbox");
+expect(element).not.toBeInTheDocument();
+```
+
+- using findBy to make sure element eventually exists
+  - used with data fetching
+
+## 43. When to use async queries
+
+- we'll fake a data request here and use findBy
+- we'll also show how tests fail with synchronous tests
+- our new component to test data fetching
+
+```js
+import { useState, useEffect } from "react";
+
+const fakeFetchColors = () => {
+  return Promise.resolve(["red", "green", "blue"]);
+};
+
+const LoadableColorList = () => {
+  const [colors, setColors] = useState([]);
+
+  useEffect(async () => {
+    setColors(await fakeFetchColors());
+  }, []);
+
+  const renderedColors = colors.map((color) => {
+    return <li key={color}>{color}</li>;
+  });
+
+  return <ul>{renderedColors}</ul>;
+};
+
+render(<LoadableColorList />);
+```
+
+- testing the wrong way with getAllBy
+
+```js
+const elements = screen.getAllByRole("listitem");
+expect(elements).toHaveLength(3);
+```
+
+- this synchronous test fails
+- the right way to test data fetching (passing test)
+
+```js
+const elements = await screen.findAllByRole("listitem");
+expect(elements).toHaveLength(3);
+```
+
+## Quick reference notes
 
 - use aria-label when there is no text in an element
 - ARIA roles are the preferred way of finding elements
