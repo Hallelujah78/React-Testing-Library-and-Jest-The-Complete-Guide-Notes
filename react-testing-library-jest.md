@@ -4,13 +4,15 @@
 
 ---
 
-## 1. How to Get Help
+## Section 1: Dive In - Let's Get Started!
+
+### 1. How to Get Help
 
 - just intro
 
 ---
 
-## 2. Join Our Community!
+### 2. Join Our Community!
 
 - intro stuff
 
@@ -18,7 +20,7 @@
 
 ---
 
-## 3. Start Testing... Now!
+### 3. Start Testing... Now!
 
 - [basic start project](http://www.codesandbox.io/s/rtl-starter-sq54b4 "starter project where we can start writing tests straight away")
 - outline core functionality of the app
@@ -67,7 +69,7 @@ test("clicking on the button loads 6 more products", async () => {
 
 ---
 
-## 4. A few critical questions
+### 4. A few critical questions
 
 - What were all those import statements?
 - How were our tests found?
@@ -104,7 +106,9 @@ test("clicking on the button loads 6 more products", async () => {
 
 ---
 
-## 5. Project Setup
+## Section 2: A Whirlwind Overview of Testing
+
+### 5. Project Setup
 
 - what we'll do now
   - make a simple project and test it
@@ -120,37 +124,37 @@ test("clicking on the button loads 6 more products", async () => {
 
 ---
 
-## 6. Quick Note
+### 6. Quick Note
 
 - filler
 
 ---
 
-## 7. Adding the Form
+### 7. Adding the Form
 
 - see lesson 10 - completed users project
 
 ---
 
-## 8. Handling User Input
+### 8. Handling User Input
 
 - see lesson 10 - completed users project
 
 ---
 
-## 9. Rendering the List of users
+### 9. Rendering the List of users
 
 - see lesson 10 - completed users project
 
 ---
 
-## 10. Completed Users Project
+### 10. Completed Users Project
 
 - link to download what we built in lessons 7-9
 
 ---
 
-## 11. Our first test
+### 11. Our first test
 
 - Test writing process
 
@@ -210,7 +214,7 @@ Ran all test suites.
 
 ---
 
-## 12. Element Query System
+### 12. Element Query System
 
 - what happens when we run our tests?
 
@@ -241,7 +245,7 @@ Ran all test suites.
 
 ---
 
-## 13. Understanding ARIA roles
+### 13. Understanding ARIA roles
 
 - getAllByRole and getByRole
 - role refers too ARIA roles
@@ -257,7 +261,7 @@ Ran all test suites.
 
 ---
 
-## 14. Understanding Jest matchers
+### 14. Understanding Jest matchers
 
 - this refers to assertions which are our `expect()` functions
 - expect is provided by Jest
@@ -292,7 +296,7 @@ expect(inputs).toHaveLength(2);
 
 ---
 
-## 15. Test was not wrapped in act(...) warning and test failure
+### 15. Test was not wrapped in act(...) warning and test failure
 
 - a quick note about warnings related to act(...). This relates to RTL v14 update and CRA not updating its version of RTL.
 - user events are now async
@@ -300,7 +304,7 @@ expect(inputs).toHaveLength(2);
 
 ---
 
-## 16. Simulating User Events
+### 16. Simulating User Events
 
 - we're testing we can enter a name and email and click submit and then the onUserAdd function gets called
 - we'll write a bad implementation of the test that works and fix it later
@@ -316,7 +320,7 @@ user.keyboard("{Enter}");
 
 ---
 
-## 17. Recording function calls
+### 17. Recording function calls
 
 - it's easier to interpret results in the terminal if we just run one test file at a time sometimes
 - run a single test in Jest:
@@ -418,7 +422,7 @@ test("it calls onUserAdd when form is submitted", async () => {
 
 ---
 
-## 18 Introducing Mock Function
+### 18 Introducing Mock Function
 
 - we're fixing up our previous test implementation here
 - argList and the callback are a hacky way to test that our function is called and called with correct args
@@ -467,7 +471,7 @@ expect(mock).toHaveBeenCalledWith({ name: "gavan", email: "gavan@email.com" });
 
 ---
 
-## 19. Querying elements by labels
+### 19. Querying elements by labels
 
 - the next issue is:
 
@@ -508,7 +512,7 @@ const emailInput = screen.getByRole("textbox", { name: /enter email/i });
 
 ---
 
-## 20. Testing UserList
+### 20. Testing UserList
 
 - receives array of users each with name and email
 - renders table row, 2 data cells for every user
@@ -542,7 +546,7 @@ test("render the name and email of each user", async () => {
 
 ---
 
-## 21. Getting Help with query functions
+### 21. Getting Help with query functions
 
 - memorizing query functions to find elements is hard
 - can use this helper function:
@@ -585,7 +589,7 @@ expect(rows).toHaveLength(2);
 
 ---
 
-## 22 Query Function escape hatches
+### 22 Query Function escape hatches
 
 - it may not be possible to find only the elements we need solely using ARIA roles
 - fallbacks (escape hatch) when role doesn't work that well
@@ -629,7 +633,7 @@ const rows = within(screen.getByTestId("users")).getAllByRole("row");
 
 ---
 
-## 23. Another query function fallback
+### 23. Another query function fallback
 
 - `container.querySelector()`
 - when we call `render()` we get back an obj that has helper properties
@@ -653,7 +657,7 @@ const rows = container.querySelectorAll("tbody tr");
 
 ---
 
-## 24. Testing Table Contents
+### 24. Testing Table Contents
 
 - find the cells and make sure the data is appearing on screen:
 
@@ -677,7 +681,7 @@ test("render the name and email of each user", () => {
 
 ---
 
-## 25. Avoiding BeforeEach
+### 25. Avoiding BeforeEach
 
 - we have two tests in UserList and both tests share code. They both declare a list of users and render a component
 - we can extract the duplicate code into a helper function
@@ -740,7 +744,7 @@ test("render the name and email of each user", () => {
 
 ---
 
-## 26. Testing the whole app
+### 26. Testing the whole app
 
 - now we test App.jsx
 - create App.test.js
@@ -817,7 +821,7 @@ test("can receive a new user and show it on a list", async () => {
 
 ---
 
-## 27. A touch of test-driven development
+### 27. A touch of test-driven development
 
 - when we submit our form, our inputs should 'empty out' or be set to empty strings
 - we will write the test to make sure this is happening first, and then we will write the code to make it happen (test-driven)
@@ -856,13 +860,13 @@ test("our name and email input fields should be set to empty strings after the f
 
 ---
 
-## 28. Feature Implementation
+### 28. Feature Implementation
 
 - did this above, two state setters!
 
 ---
 
-## 29. Introducing RTL Book
+### 29. Introducing RTL Book
 
 - rtl book is a CLI interactive cheat sheet for query functions and matchers `rtl-book`
 - running rtl-book:
@@ -879,7 +883,9 @@ npx rtl-book serve roles-notes.js
 
 ---
 
-## 30. A few notes on RTL Book
+## Section 3: Understanding Element Roles
+
+### 30. A few notes on RTL Book
 
 - close with ctrl+c
 - open it again using `npx rtl-book serve roles-notes.js`
@@ -890,7 +896,7 @@ npx rtl-book serve roles-notes.js
 
 ---
 
-## 31 partial rule list
+### 31 partial rule list
 
 - we create a component in RTL book and render it
 
@@ -919,7 +925,7 @@ render(<RoleExample />);
 
 ---
 
-## 32 finding elements by role
+### 32 finding elements by role
 
 - we write a test in RTL book:
 
@@ -958,7 +964,7 @@ test("can find element by role", async () => {
 
   ***
 
-## 33. finding by accessible names
+### 33. finding by accessible names
 
 - how do you find a single element when there are two or more elements with the same roles?
 - you can use accessible name
@@ -1004,7 +1010,7 @@ test("can select by accessible name", async () => {
 });
 ```
 
-## 34. Linking inputs to labels
+### 34. Linking inputs to labels
 
 - in some cases, inputs, there is no text in between.
 - we can use accessible names with inputs by adding a label
@@ -1050,7 +1056,7 @@ expect(searchInput).toBeInTheDocument();
 
 ---
 
-## 35. Directly Assigning an Accessible Name
+### 35. Directly Assigning an Accessible Name
 
 - example where this would be useful is a button that wraps an icon
   - there is no accessible text
@@ -1088,11 +1094,11 @@ test("find element based on label", () => {
 });
 ```
 
-## 36. Completed Roles Notebook
+### 36. Completed Roles Notebook
 
 - just a link to download complete roles-notes with comments by Stephen
 
-## 37 Deeper into query functions
+### 37 Deeper into query functions
 
 - function names indicate various things
 - query functions always start with one of the following:
@@ -1124,7 +1130,11 @@ test("find element based on label", () => {
   | prove element does not exist | queryBy, queryAllBy |
   | make sure element eventually exists | findBy, findAllBy |
 
-## 38. getBy, queryBy, findBy
+---
+
+## Section 4: Finding Elements with Query Functions
+
+### 38. getBy, queryBy, findBy
 
 - here we explore using getBy, findBy and queryBy
 
@@ -1179,7 +1189,7 @@ expect(errorThrown).toEqual(true);
 - Stephen says this is a workaround regarding confirming an async test throws in 'this browser environment'
   - not sure if he means his rtl-book application, or just jest/rtl in general
 
-## 39. More on single queries
+### 39. More on single queries
 
 - here we explore what happens when findBy, queryBy, and getBy find 1 element and multiple elements
 - remember, these are queries for finding single elements
@@ -1211,7 +1221,7 @@ try {
 expect(errorThrown).toEqual(true);
 ```
 
-## 40. Multiple element variations
+### 40. Multiple element variations
 
 - intentionally looking for multiple elements
 - our tests:
@@ -1230,7 +1240,7 @@ test("getAllBy, queryAllBy, findAllBy ", async () => {
 - getAllBy and findAllBy will throw if you find 0 elements
 - queryAllBy returns empty array if zero found
 
-## 42. When to use These Queries
+### 42. When to use These Queries
 
 - when to Use
   | goal of test | Use |
@@ -1261,7 +1271,7 @@ expect(element).not.toBeInTheDocument();
 - using findBy to make sure element eventually exists
   - used with data fetching
 
-## 43. When to use async queries
+### 43. When to use async queries
 
 - we'll fake a data request here and use findBy
 - we'll also show how tests fail with synchronous tests
@@ -1305,6 +1315,356 @@ expect(elements).toHaveLength(3);
 const elements = await screen.findAllByRole("listitem");
 expect(elements).toHaveLength(3);
 ```
+
+---
+
+### 44. Completed Queries Notebook
+
+- just a link to the completed queries notebook
+
+---
+
+## Section 5: Query Function Suffixes
+
+### 45. Query Criteria
+
+- create a new rtl notebook called criteria-notebook.js
+- this relates to the end of the query function name
+  - getByRole
+  - getByLabelText
+  - byPlaceholderText
+  - byText
+  - ByDisplayValue
+  - byAltText
+  - ByTitle
+  - ByTestId
+- when to use each?
+  - we always prefer ByRole
+  - then fall back to using one of the others
+    - byTestId is one of our last fall backs
+- our component to test:
+
+```js
+import { screen, render } from "@testing-library/react";
+import { useState } from "react";
+
+function DataForm() {
+  const [email, setEmail] = useState("asdf@asdf.com");
+  return (
+    <form>
+      <h3>enter data</h3>
+      <div data-testid="image wrapper">
+        <img alt="data" src="data.jpg" />
+      </div>
+      <label htmlFor="email">email</label>
+      <input
+        id="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <label htmlFor="color">color</label>
+      <input id="color" placeholder="Red" />
+      <button title="Click when ready to submit">Submit</button>
+    </form>
+  );
+}
+
+render(<DataForm />);
+```
+
+- our skeleton test:
+
+```js
+import { render, screen } from "@testing-library/react";
+
+test("selecting different elements", async () => {
+  render(<DataForm />);
+  const elements = [];
+
+  for (let element of elements) {
+    expect(element).toBeInTheDocument();
+  }
+});
+```
+
+### 46. When To Use Each Suffix
+
+- we use all the getBy variations of these suffixes
+- our tests:
+
+```js
+import { render, screen } from "@testing-library/react";
+
+test("selecting different elements", async () => {
+  render(<DataForm />);
+  const elements = [
+    screen.getByRole("button"),
+    screen.getByLabelText(/email/i),
+    screen.getByPlaceholderText("Red"),
+    screen.getByText("enter data"),
+    screen.getByDisplayValue("asdf@asdf.com"),
+    screen.getByAltText("data"),
+    screen.getByTitle("Click when ready to submit"),
+    screen.getByTestId("image wrapper"),
+  ];
+
+  for (let element of elements) {
+    expect(element).toBeInTheDocument();
+  }
+});
+```
+
+- note, for getByLabelText we could have done:
+
+```js
+screen.getByRole("textbox", { name: /email/i });
+```
+
+- this achieves the same thing
+- getByText is also very useful
+  - find text, don't necessarily care what element it is in
+- byTestId is the ultimate fallback
+- you can substitute regular expressions for any string
+
+---
+
+### 47. Completed Criteria Notebook
+
+- just a link to the completed criteria notebook that we've been working on
+
+---
+
+## Section 6: Matchers in Jest
+
+### 48. Diving Into Matchers
+
+- matchers help make sure a value is what we expect it to be
+- we have access to Jest matchers and all matchers in @testing-library/jest-dom
+  - toBeInTheDocument()
+- we will write custom matchers here
+  - useful if writing tests that are very similar in nature
+- in our note book, we create a FormData component that renders a form
+  - to get a form element, you can't use getByRole
+  - must assign aria label to it
+- our component:
+
+```js
+import { render, screen, within } from "@testing-library/react";
+
+const FormData = () => {
+  return (
+    <form aria-label="form">
+      <button>save</button>
+      <button>cancel</button>
+    </form>
+  );
+};
+
+render(<FormData />);
+```
+
+- our test:
+
+```js
+test("the form displays two buttons", async () => {
+  render(<FormData />);
+
+  expect(screen.getAllByRole("button")).toHaveLength(2);
+});
+```
+
+- seems easy, but if we change our component it becomes more complex
+
+---
+
+### 49. Introducing Custom Matchers
+
+- the change we make, we wrap our form with a div and add a button outside the form
+- our test says "the form displays two buttons"
+  - one of our buttons is outside the form
+  - we could update the test, so we find the form and then find the buttons inside the form
+- alternatively, we just look for all 3 buttons
+- in this case, we will find the form and make sure it has two buttons
+- we imported the `within` helper function
+- updated test using `withing`:
+
+```js
+test("the form displays two buttons", async () => {
+  render(<FormData />);
+
+  const form = screen.getByRole("form");
+  const buttons = within(form).getAllByRole("button");
+  expect(buttons).toHaveLength(2);
+});
+```
+
+- this was an easy fix
+  - imagine working on a very large project where we have to write many, many tests like this and it becomes tedious
+- one way to approach that is to write custom matcher which might look like this:
+
+```js
+expect(form).toContainRole("button", 2);
+```
+
+---
+
+### 50. Implementing a Custom Matcher
+
+- to create a custom matcher, we define a new function
+
+```js
+const toContainRole = (container, role, quantity = 1) => {};
+```
+
+- the container is what our `expect()` takes as an argument
+- role is the role
+- quantity is the number of elements we expect to find in the container and it has a default value of 1
+- now we connect our `toContainRole` custom matcher to `expect` so that it can be treated as a matcher
+- under the function definition we put:
+
+```js
+expect.extend({ toContainRole });
+```
+
+- we return an object from our custom matcher:
+
+```js
+return {
+  pass: false,
+  message: () => `the container did not contain 2 buttons`,
+};
+```
+
+- if pass is false, we also have a message prop which is a function that returns a string
+  - this string tells the developer why the test failed
+- complete matcher code:
+
+```js
+const toContainRole = (container, role, quantity = 1) => {
+  const elements = within(container).queryAllByRole(role);
+
+  if (elements.length === quantity) {
+    return {
+      pass: true,
+    };
+  }
+  return {
+    pass: false,
+    message: () =>
+      `expected ${container} to have ${quantity} items with role ${role}. Found ${elements.length} instead.`,
+  };
+};
+expect.extend({ toContainRole });
+```
+
+- usage of custom matcher:
+
+```js
+test("the form displays two buttons", async () => {
+  render(<FormData />);
+
+  const form = screen.getByRole("form");
+
+  expect(form).toContainRole("button", 2);
+});
+```
+
+---
+
+## Section 7: Big Project Overview
+
+### 51. Required Project Setup - Do Not Skip
+
+- a link to resource required for upcoming lectures
+
+### 52. App Overview and Setup
+
+- we unzip resources
+- navigate to folder
+- install deps and `npm run start`
+- also have to run `npx prisma generate` if server error
+- this is an app that Stephen created for the course for testing/adding features and more testing
+- the app allows you to search github repos and then get an english language explanation from an AI chatbot of what the code does
+  - pretty damn cool!
+
+## 53. The Tech in This Project
+
+- we have a CRA application
+  - for navigation it uses React Router
+  - data fetching
+    - SWR
+      - takes data that has been fetched and serving or making available to components, coordination layer
+      - SWR is a React Hooks library for data fetching. The name “SWR” is derived from stale-while-revalidate , a cache invalidation strategy popularized by HTTP RFC 5861. SWR first returns the data from cache (stale), then sends the request (revalidate), and finally comes with the up-to-date data again.
+    - Axios
+  - Express API
+    - handles auth
+    - stores data in a SQLite database
+    - outside API hosted by Stephen
+      - provides access to
+        - Github API
+        - Open AI API
+- if we haven't heard of React Router or SWR or Axios - GOOD!
+  - most testing is figuring out code other engineers have written
+
+---
+
+### 54. The Path Ahead
+
+- plan of what we will do in testing the Codesplain application
+- how people think testing works
+  - write code
+  - immediately write tests with perfect knowledge of the code
+  - everything is super easy and works first time
+- this is not what happens
+- Testing in reality
+  - user complains about a bug
+  - support gives workaround
+  - support tells project manager about the bug
+  - project manager tells engineering manager the bug needs to be fixed
+  - engineering manager tells you to fix it probably without a lot of detail
+  - you need to find the bug, fix it, and write a test to confirm it is fixed
+- The Plan Ahead
+  - pretend to be engineers working on codesplain
+  - we will receive bug reports that contain less info than might be useful - created by Stephen
+  - figure out how to find the code and fix it
+  - figure out how to write code to confirm the bug is fixed
+  ***
+
+### 55. A Process for Debugging
+
+- typically in a real world situation a bug report might include:
+  - a title with a brief description of the bug
+  - steps to reproduce or experience the bug
+  - expected outcome
+  - actual outcome
+  - screenshots
+- The Bug Fixing Process
+  - Find the relevant components in the codebase
+  - Figure out how the component is getting its data/state/props
+  - use a debugger, console log or documentation to understand the data
+  - implement a fix
+  - test the fix
+- Finding Relevant Components
+  - React Dev Tools
+  - Search the codebase for text/icons/classnames that the component is producing
+  - If error is being thrown, look at stack trace
+  - ask another engineer
+- note with React Dev Tools
+  - you can click the arrow (similar to the hover to see element functionality provided by the browser), and hover over an element on the rendered page to see what component is producing it
+  - i did not know this was a thing!
+- it's possible to open up a file directly if you know its name in VSCode using `Ctrl+p` and typing the name of the file
+- we know the component is rendering 'issues need help'
+  - we can search for that string using `Ctrl Shift F`
+- asking other engineers is a low priority
+  - want to solve problems ourselves - I mean, that's the job
+
+---
+
+### 56. Understanding Data Flowing Into the Component
+
+-
+
+---
 
 ## Quick reference notes
 
