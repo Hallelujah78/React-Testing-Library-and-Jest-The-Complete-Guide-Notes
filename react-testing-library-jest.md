@@ -1662,6 +1662,91 @@ test("the form displays two buttons", async () => {
 
 ### 56. Understanding Data Flowing Into the Component
 
+- figure out how the data is getting its props/data/stat
+- we know it is the RepositorySummary component that is rendering the stuff we are interested in, in terms of our bug
+- it's best to find your files through `ctrl P`
+  - on larger projects, using the explorer will be time consuming and messy
+- RepositorySummary is pretty simple
+  - no state
+  - no Redux or context
+  - just one prop, which is `repository`
+  - we're destructuring data from repository prop
+    - stands to reason that the `repository` prop might also include info about the primary language
+- a few ways to understand/find out about `repository`
+  - console log
+  - set a debugger
+  - react developer tools
+  - can look at network request log
+    - figure out which request is seving up the info that the comp is using
+    - look at raw request
+    - understand what is being served
+- console log
+  - just `console.log(repository)`
+    - Stephen searches for 'react' and scrolls through the results to find the language prop on repository
+    - searching for python, we see that one item has a language of `null` while another is set to 'Python'
+- set a debugger
+  - we type `debugger;` in our code
+  - if our dev console is open in browser, as our comp is executed, we'll stop execution at the debugger statement
+  - can hit `esc` to open up console
+  - now you can print out and work with the variables in the current scope
+  - for example, typing out `repository` and hitting enter, will print out the current value of the repository prop
+  - you can actually type `repository.language` and it will print out the value of that prop within repository!
+  - remember to remove the debugger statement when done
+- react developer tools
+  - again, we can hover to show component that renders our html
+  - we can see the props, expand, and find the language property
+- network request log
+  - filter by fetch/xhr
+  - trigger a search by typing in the search bar
+  - you may not be fetching if there is aggressive caching - may have to refresh page
+  - there is a repositories request
+  - you can inspect it on preview tab
+    - again, can scroll down and find the language prop
+
+---
+
+### 57. Developing a Test and Fix
+
+- writing a test for the comp, relies on the steps we went through in lesson 56
+- understanding the repository object and what it contains is crucial to creating a good test
+- our bug fix process says implement a fix and then test, but we'll reverse the order here, test and then fix
+- need to create a test file for this component if it doesn't exist
+  - right click on tab and `reveal in explorer view`
+- we create a test file for it:
+
+```js
+import { screen, render } from "@testing-library/react";
+import RepositoriesSummary from "./RepositoriesSummary";
+
+test(`displays the primary language of the repository`, () => {
+  const repository = {
+    stargazers_count: 50,
+    open_issues: 0,
+    forks: 500,
+    language: "JavaScript",
+  };
+  render(<RepositoriesSummary repository={repository} />);
+
+  const language = screen.getByText("JavaScript");
+  expect(language).toBeInTheDocument();
+});
+```
+
+- our fix, note we destructure `language` from repository:
+
+```js
+<div>{language}</div>
+```
+
+- my questions about this are:
+  - should we not double check that the language prop in repository is what we think it is? There's an assumption that it represents the primary language being used by the repository
+  - there are also null values where the primary language is not set
+  - what if there are undefined values or the language prop is missing entirely from the repository object?
+
+---
+
+### 58. Looping Over Assertions
+
 -
 
 ---
