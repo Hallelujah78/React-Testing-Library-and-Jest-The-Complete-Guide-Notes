@@ -1747,7 +1747,201 @@ test(`displays the primary language of the repository`, () => {
 
 ### 58. Looping Over Assertions
 
--
+- we should also check for the other items: stars, forks, open issues
+- update test description
+- we could find each element individually and then write an expect statement for each:
+
+```js
+const language = screen.getByText("JavaScript");
+const stars = screen.getByText(50);
+expect(language).toBeInTheDocument();
+expect(stars).toBeInTheDocument();
+```
+
+- quite repetitive
+- more concise way
+  - loop over key value pairs in repository object, and expect to find each value
+  ```js
+  for (let key in repository) {
+    const value = repository[key];
+    const element = screen.getByText(value);
+    expect(element).toBeInTheDocument();
+  }
+  ```
+- unexpectedly, this fails
+
+---
+
+### 59.Flexible Queries
+
+- examining the output from the test:
+
+```js
+ Unable to find an element with the text: 0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+```
+
+- the html being rendered is output to the terminal and:
+
+```js
+<div>0 issues need help</div>
+```
+
+- so `getByText` expects an exact match of 0, but our element has text of 'o issues need help' and so the test fails
+- if we use a regex instead of a string, our test will pass as we can partial match any part of the text content
+
+```js
+const element = screen.getByText(new RegExp(value));
+```
+
+- note, this is my original mock repository object:
+
+```js
+const repository = {
+  stargazers_count: 50,
+  open_issues: 0,
+  forks: 500,
+  language: "JavaScript",
+};
+```
+
+- this will cause tests to fail, because when searching for 50, it will find 50 and 500, when searching for 0, it will find 50 and 500 and 0.
+  - be careful when setting values for your mock object
+  - i changed mine to 50, 300 and 7 and the tests passed
+
+---
+
+## Section 8: The Mysterious 'Act' Function!
+
+### 60. Another Bug!
+
+- new bug: List of repos should show a link to the repo on github.com
+- each search result has a link to the repo on github on the far right side
+  - link is missing
+- looks very similar to the last bug we fixed
+  - idea is to be introduced to hardest aspects of testing
+    - module mocks - difficult
+    - navigation - not too hard
+    - `act` - a big headache
+- steps
+  - find the relevant component
+    - this time it's NOT RepositoriesSummary - this only prints out the summary for the repository
+    - it appears to be RepositoriesListItem
+
+---
+
+### 61. Analyzing the Data ... Again!
+
+- step 2, how is the component getting data/state/props?
+- again, this component receives a `repository` object through props
+- we need to show a link to take the user to github.com
+  - need to inspect the object again to find that property
+- examining repository, it looks like the `url` property is what we need
+  - `url` is actually an api url
+  - we need `html_url`
+- step 4 - create the test
+
+```js
+import { screen, render } from "@testing-library/react";
+import RepositoriesListItem from "./RepositoriesListItem";
+
+const renderComponent = () => {
+  const repository = {
+    full_name: "/repositories/klingon-ipsum",
+    language: `JavaScript`,
+    description: "All Algorithms implemented in Python",
+    owner: { login: "hallelujah78" },
+    name: "driver-theory",
+    html_url: "https://github.com/TheAlgorithms/Python",
+  };
+  render(<RepositoriesListItem repository={repository} />);
+  return repository;
+};
+
+test(`displays a link to a github.com repository`, () => {
+  renderComponent();
+});
+```
+
+- and we get a long nasty error
+
+---
+
+### 62. Adding Router Context
+
+- our error is (near top of stack trace):
+
+```js
+ Error: Uncaught [Error: useHref() may be used only in the context of a <Router> component.]
+```
+
+- also, nearer the bottom:
+
+```js
+ The above error occurred in the <Link> component:
+```
+
+- how do we fix this and what is going on?
+  - testing usually requires you have a deep understanding of the libraries your project uses
+  - some of these libraries don't like to be used in a test environment
+- what is happening:
+  - RepositoriesListItem receives repository prop
+  - RepositoriesListItem renders:
+    - Link
+      - must have React Router Context available to it to work
+    - FileIcon
+    - RepositoriesSummary renders
+      - StarIcon
+- to fix we have options to provide a router
+  - BrowserRouter
+    - stores current Url in address bar
+  - HashRouter
+    - stores current URL in the # part of the address bar
+  - MemoryRouter
+    - stores current URL in memory
+    - many blog posts recommend using this option
+    - we'll use this option for now, but replace later
+- the fix is import MemoryRouter and wrap your component in it
+
+```js
+import { MemoryRouter } from "react-router-dom";
+...
+ render(
+    <MemoryRouter>
+      <RepositoriesListItem repository={repository} />
+    </MemoryRouter>
+  );
+```
+
+- we are still getting a warning:
+
+```js
+ Warning: An update to FileIcon inside a test was not wrapped in act(...).
+```
+
+- but the test is passing
+
+---
+
+### 63 Unexpected State Updates
+
+- act() warnings
+- need to understand 3-4 different topics to understand the warning
+- will occur frequently if data fetching in a useEffect
+- four topics for Act warning
+  - Unexpected state updates in tests are bad
+  - the act function defines a window in time where state updates can and should occur
+  - RTL uses 'act' behind the scenes for you
+  - to solve act warnings, you should use a findBy. Usually you don't want to follow the advice of the warning
+- unexpected state updates are bad: example
+  - simple app, click button to load some data
+  - we have two pieces of state
+    - shouldLoad and users
+  - clicking button sets shouldLoad to true
+  - in turn, this causes useEffect to fire and fetch and set users
+- if we tested this app, we would get an act warning
+- why?
+  <img width="453px" height="470px"
+  src="./act_warning_diagram.png" alt="diagram that shows the sequence of events that cause an act warning to occur.">
 
 ---
 
