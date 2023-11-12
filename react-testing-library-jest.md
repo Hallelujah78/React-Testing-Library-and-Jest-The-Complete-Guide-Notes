@@ -1942,6 +1942,173 @@ import { MemoryRouter } from "react-router-dom";
 - why?
   <img width="453px" height="470px"
   src="./act_warning_diagram.png" alt="diagram that shows the sequence of events that cause an act warning to occur.">
+- this diagram assumes you are running synchronous tests
+- unexpected state updates means our state updates are happening at a time that we don't expect - i.e. if fetching data, after the fetch is complete the state is updated
+
+---
+
+### 64. Act Included with React Testing Library
+
+- act function defines a window in time where state updates can and should occur
+- if we were to write the test without RTL
+
+```js
+import {act} from 'react-dom/test-utils'
+
+test('clicking the button loads users', ()=>{
+  act(()=>{
+    render(<UserList/>, container);
+  })
+const button = document.querySelector('button');
+await act(async () =>{
+  button.dispatch(new MouseEvent('click'));
+})
+const users = document.querySelectorAll('li');
+expect(users).toHaveLength(3)
+})
+```
+
+- the items we wrap in act tells our tests that we expect state to be updated by these items
+- React will process all state updates + useEffects before exiting the `act`
+- this test will pass, but it would require that we set up our fake data request in a very specific way
+- remember, RTL uses act for you behind the scenes
+- functions that call `act` for you behind the scenes
+  - screen.findBy
+  - screen.findAllBy
+  - waitFor
+  - user.keyboard - synchronous
+  - user.click - synchronous
+- find is async - gives you a 1 second window
+- when using RTL, the preferred way to use `act` is to call findBy etc
+  - we don't call act directly
+
+---
+
+### 65. Using Act (hopefully not!) with RTL
+
+- when you see act warnings, you use findBy instead of getBy, or waitFor or findAllBy etc
+- you almost always don't call act yourself
+
+---
+
+### 66. Solving the Act Warning
+
+- back to this warning:
+
+```js
+ Warning: An update to FileIcon inside a test was not wrapped in act(...).
+```
+
+- options to solve (from best to worst):
+  - use a findBy or findAllBy to detect when the component has finished its data fetching
+  - use an 'act' to control when the data fetching request gets resolved (more on this later)
+  - use a module mock to avoid rendering the troublesome component
+  - use an `act` with a `pause`
+- step 1 - find the FileIcon component in the project
+  - we're importing it into RepositoriesListItem
+  - it is being passed the `language` prop from `repository` as the `name` attribute: `name={language}`
+- we take a look at the FileIcon file
+  - inside the FileIcon file, there is a useEffect with some async code that updates state
+  - classic sign that we are going to run into Act warning
+- we want to use a findBy or findAllBy to resolve this by creating an act window
+  - mark the enclosing function (the test callback) as async
+  - under the test, create a `pause` function
+
+```js
+const pause = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, 100);
+  });
+};
+```
+
+- we print out what has been rendered, pause and then print it again:
+
+```js
+screen.debug();
+await pause();
+screen.debug();
+```
+
+- this allows us to examine the difference after our component has fetched the data
+- we note that in the later debug(), we have an extra element missing from the first debug()
+
+```js
+<i
+  aria-label="JavaScript"
+  class="shrink w-6 pt-1 icon js-icon medium-yellow"
+  role="img"
+/>
+```
+
+- this is our FileIcon
+- to fix the Act warning, we can use a findBy and watch for the presence of the `i` element with role of img
+- once the `i` element is present, that's a sign that our data fetching is complete, and so we can move on with remainder of test
+- and so we do this:
+
+```js
+await screen.findByRole("img", { name: "JavaScript" });
+```
+
+- this is kind of horrible, difficult and involved
+- if you are testing a component that fetches data and renders it, it's actually much easier to figure out how to use the findBy, findAllBy
+
+---
+
+### 67. Module Mocks
+
+- another way to solve the `act` warning
+- a module mock avoids rendering the troublesome component
+- if we didn't render FileIcon, we wouldn't get the act warning
+- to create a module mock:
+- we place the following under our MemoryRouter import:
+
+```js
+jest.mock("../tree/FileIcon.js", () => {
+  return () => {
+    return "File Icon Component";
+  };
+});
+```
+
+- essentially we are mocking or spoofing the contents of the FileIcon file
+- it says, instead of importing FileIcon to render it, return a function that returns a string 'File Icon Component'
+- using screen.debug() we see this string being rendered:
+
+```js
+  <div
+          class="py-3 border-b flex"
+        >
+          File Icon Component
+          <div>
+```
+
+- this method is not always a good option
+  - if you are testing a component that renders another component that is causing the act warning and you don't care about the component causing the act warning, then this can be a good option
+
+---
+
+### 68. Absolute Last Ditch Act Solution
+
+- really really want to avoid using this approach
+- we import `act` from RTL
+- `act` is actually defined in `react-dom`
+- RTL imports `act`, modifies it and then exports it
+- use it like so:
+
+```js
+await act(async () => {
+  await pause();
+});
+```
+
+---
+
+### 69. Checking the Link href
+
+-
 
 ---
 
