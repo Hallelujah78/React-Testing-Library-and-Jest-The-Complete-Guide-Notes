@@ -2108,6 +2108,97 @@ await act(async () => {
 
 ### 69. Checking the Link href
 
+- back to our bugfix - to show a link that takes the user to the github repository
+- we want to show an icon
+- find an element with role of 'link' and check the href
+- our updated test:
+
+```js
+test(`displays a link to a github.com repository`, async () => {
+  const { html_url, full_name, language, description, owner, name } =
+    renderComponent();
+  await screen.findByRole("img", { name: "JavaScript" });
+  const link = screen.getByRole("link");
+  expect(link).toHaveAttribute("href", html_url);
+});
+```
+
+---
+
+### 70. Implementing the Feature
+
+- running our test, we see it is failing
+  - this is expected since we haven't implemented the feature
+- however, it is finding a link but it has the wrong href value
+  - there is a Link component being rendered which will produce an anchor element
+  - we're finding the wrong link
+  - need to be more specific
+- we will add an accessible name to the link we want to find
+- updated test:
+
+```js
+const link = screen.getByRole("link", { name: /github repository/i });
+expect(link).toHaveAttribute("href", html_url);
+```
+
+- our implementation with icon and acessible name:
+
+```js
+<a href={html_url} aria-label="github repository">
+  <MarkGithubIcon />
+</a>
+```
+
+- two great reasons to add aria-label
+  - it allows us to select the item (the link) that doesn't otherwise have an accessible name
+  - it makes our app accessible to screen readers
+    - again it's a link wrapping an icon, so we would have to add an aria-label here to make it accessible
+
+---
+
+### 71. Checking the Icon
+
+- since we're fixing a bug here, we may as well make sure everything else works in the component and flesh out the tests
+- additional tests
+  - we are showing the file icon to the left
+  - make sure the link appears and has appropriate href
+- the file icon, adding a test:
+
+```js
+test("displays a file icon with the appropriate icon", async () => {
+  renderComponent();
+  const icon = await screen.findByRole("img", { name: "JavaScript" });
+
+  expect(icon).toHaveClass("js-icon");
+});
+```
+
+- note, the class 'js-icon' is added dynamically with reference to the language `name={language}`
+- therefore we can say, "if icon has class, then it passes the test"
+
+---
+
+### 72. Checking the Link
+
+- a test for the link to the code editor page
+- our test:
+
+```js
+test("shows a link to the code editor page", async () => {
+  const { full_name, owner, name } = renderComponent();
+  await screen.findByRole("img", { name: "JavaScript" });
+
+  const link = await screen.findByRole("link", {
+    name: new RegExp(owner.login),
+  });
+  expect(link).toHaveAttribute("href", `/repositories/${full_name}`);
+});
+```
+
+---
+
+### 73. Easy Fix, Hard Test
+
 -
 
 ---
