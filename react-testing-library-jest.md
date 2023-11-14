@@ -2197,7 +2197,359 @@ test("shows a link to the code editor page", async () => {
 
 ---
 
+## Section 9: Handling Fetching in Tests
+
 ### 73. Easy Fix, Hard Test
+
+- new bug fix
+- the bugfix: homepage should show popular repositories for 6 languages
+  - should see most popular repositories for javascript, typescript, Rust, Go, Python, and Java
+  - python and java are missing
+- step 1 - find out what component is rendering the data
+  - appears to be RepositoriesTable and it receives a label prop "Most Popular JavaScript" and the repositories prop
+  - RepositoriesTable is rendered by HomeRoute.js
+    - this renders an instance of RepositoriesTable for each language
+    - the props passed in for each language
+      - label = a string
+      - repositories is `jsRepos` or `tsRepos` etc
+- there is an additional line in HomeRoute.js for each RepositoriesTable being rendered:
+
+```js
+const { data: goRepos } = useRepositories("stars:>10000 language:go");
+```
+
+- we need to add a line for our two missing languages and add a RepositoriesTable component for each of our new languages
+- for java:
+
+```js
+const { data: javaRepos } = useRepositories("stars:>10000 language:java");
+```
+
+- and the RepositoriesTable:
+
+```js
+<RepositoriesTable label="Most Popular Java" repositories={javaRepos} />
+```
+
+- and do the same for Python
+- that's the fix and it works fine
+- as for the test, I'm not sure if we test RepositoriesTable or HomeRoute
+  - i think we should test HomeRoute.js since it is rendering the component
+- two options after implementing the fix
+  - the correct option is to go and write tests to make sure everything is working as expected
+- our goal here is to learn about data fetching inside of a test
+
+---
+
+### 74. Options for Testing Data Fetching
+
+- goal of this is to see how we can test data fetching
+- the useRepositories hook fetches data in our app
+- in useRepositories file
+  - we have the useRepositories function
+  - we have repositoriesFetcher
+  - useRepositories makes use of SWR
+    - SWR is a library which is a hook that makes data fetching easy and straightforward
+    - SWR uses axios behind the scenes
+    - SWR handles the response and gets data to components
+- data fetching in tests
+  - don't want components to make actual network requests
+  - slow - data might change
+  - we fake or mock data fetching in tests
+- Options for Data Fetching
+  - mock the file that contains the data fetching code
+  - use a library to 'mock' axios to return fake data
+  - create a manual mock for axios
+- mock here means 'make a fake copy'
+- in HomeRoute.js, we import useRepositories and call it multiple times
+  - it gives us back an object with a `data` property
+  - we could create a module mock
+
+```js
+jest.mock("../hooks/useRepositories", () => {
+  return () => {
+    return {
+      data: [{ name: "react" }, { name: "bootstrap" }, { name: "javascript" }],
+    };
+  };
+});
+```
+
+- downside to mocking a data fetch
+  - interaction between hook + component is untested. Who knows if we're using the hook correctly?
+
+---
+
+### 75. Using a Request Handler
+
+- this is opton 2: using a library to mock axios (or fetch) - get axios to return fake data
+- we just intercept the request with a library
+  - msw is a common one
+  - stands for 'mock service worker'
+- msw is easy to use:
+
+```js
+rest.get("/api/repositories", (req, res, ctx) => {
+  return res(
+    ctx.json([
+      // list of repository objects
+    ])
+  );
+});
+```
+
+---
+
+### 75. Initial MSW setup
+
+- MSW setup
+  - create a test file
+  - imports:
+
+```js
+import { render, screen } from "@testing-library/react";
+import { setupServer } from "msw/node";
+import { rest } from "msw";
+import { MemoryRouter } from "react-router-dom";
+import HomeRoute from "./HomeRoute";
+```
+
+- understand the URL, method, and return value of the request the component makes
+  - use dev tools
+    - in network tab and headers we see:
+
+```js
+http://localhost:3000/api/repositories?q=stars:%3E10000+language:javascript&per_page=10
+```
+
+- and it's a GET request
+- under preview tab
+  - the response is an object
+  - it has an `items` property
+  - each element of items is an object that has information about a repository
+- it is the RepositoriesTable that is making use of the fetched data
+- in the RepositoriesTable file
+  - receive a `repositories` list
+  - map over it and for each repo (where repo is an object in repositories) we use:
+    - repo.id
+    - and `repo.full_name`
+- step 3 - create a MSW handler to intercept that request and return some fake data for your component to use
+  - in your test file, create an array called handlers:
+
+```js
+const handlers = [
+  rest.get("/api/repositories", (req, res, ctx) => {
+    const query = req.url.searchParams.get("q");
+    console.log(query);
+    return res(
+      ctx.json({
+        items: [
+          { id: 1, full_name: "full name" },
+          { id: 2, full_name: "also full name" },
+        ],
+      })
+    );
+  }),
+];
+```
+
+- ctx is 'context'
+- we're sending back an object with items property that refers to an array of objects
+  - in addition, each object in the array includes only the fields that we identified as being required in step 2
+- step 4 - set up beforeAll, afterEach and afterAll hooks in test file
+  - these ensure that MSW is actually intercepting the requests and doing stuff
+  - they are global variables (no need to import) provided by jest test runner
+  - when we call these functions, we pass in a function that will be called depending upon the name of each function
+- beforeAll
+  - executed once before all tests in the file
+- afterEach
+  - executed after each individual test in the file, regardless of pass/fail
+- afterAll
+  - run once after all tests have been executed
+- the code:
+
+```js
+const server = setupServer(...handlers);
+
+beforeAll(() => {
+  server.listen();
+});
+afterEach(() => {
+  server.resetHandlers();
+});
+afterAll(() => {
+  server.close();
+});
+```
+
+- server.resetHandlers resets the handlers to their initial state (we're not updating the handlers here)
+- server.close() stops the server and server.listen() is obvious
+- on to step 5: in a test, render the component, wait for an element to be visible
+
+---
+
+### 77. Inspecting the Component State
+
+- our test:
+
+```js
+test("renders two links for each language", async () => {
+  render(
+    <MemoryRouter>
+      <HomeRoute />
+    </MemoryRouter>
+  );
+  screen.debug();
+});
+```
+
+- remember, we must use MemoryRouter to wrap our component to avoid the error with Link
+- screen.debug shows we have no links
+  - this makes sense because we are not waiting for the MSW response to finish
+- we expect to see 6 tables, one for each language
+- we need to
+  - loop over each language
+  - for each language, make sure we see two links
+  - assert links have appropriate full name
+
+---
+
+### 78. Effective Request Testing
+
+- we write a pause function and call it in our test
+- we screen.debug() and we get:
+
+```js
+ <div
+              class="border p-4 rounded"
+            >
+              <h1
+                class="text-lg font-bold border-b mb-1"
+                id=""
+              >
+                Most Popular Go
+              </h1>
+              <div
+                class="p-0.5"
+              >
+                <a
+                  class="text-blue-500"
+                  href="/repositories/full name"
+                >
+                  full name
+                </a>
+              </div>
+              <div
+                class="p-0.5"
+              >
+                <a
+                  class="text-blue-500"
+                  href="/repositories/also full name"
+                >
+                  also full name
+                </a>
+              </div>
+            </div>
+            <div
+              class="border p-4 rounded"
+            >
+              <h1
+                class="text-lg font-bold border-b mb-1"
+                id=""
+              >
+                Most Popular Java
+              </h1>
+              <div
+                class="p-0.5"
+              >
+                <a
+                  class="text-blue-500"
+                  href="/repositories/full name"
+                >
+                  full name
+                </a>
+              </div>
+              <div
+                class="p-0.5"
+              >
+                <a
+                  class="text-blue-500"
+                  href="/repositories/also full name"
+                >
+                  also full name
+                </a>
+              </div>
+            </div>
+```
+
+- an obvious problem here is we are returning the same two links for each of our 6 languages, and so that might make testing difficult
+- we need to customize the data for each language that we are trying to get links for
+- in order to customize the data for each language, we need to access the language property from the request params:
+
+```js
+const result = req.url.searchParams.get("q").split("language:")[1];
+```
+
+- result now holds the language (go, javascript etc)
+- we can use this value to customize our full_name:
+
+```js
+return res(
+  ctx.json({
+    items: [
+      { id: 1, full_name: `${language} first name` },
+      { id: 2, full_name: `${language} second name` },
+    ],
+  })
+);
+```
+
+- the full test:
+
+```js
+test("renders two links for each language", async () => {
+  render(
+    <MemoryRouter>
+      <HomeRoute />
+    </MemoryRouter>
+  );
+
+  const languages = [
+    "javascript",
+    "typescript",
+    "python",
+    "java",
+    "rust",
+    "go",
+  ];
+
+  for (let language of languages) {
+    const links = await screen.findAllByRole("link", {
+      name: new RegExp(`${language} `),
+    });
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent(`${language} first name`);
+    expect(links[1]).toHaveTextContent(`${language} second name`);
+    expect(links[0]).toHaveAttribute(
+      "href",
+      `/repositories/${language} first name`
+    );
+    expect(links[1]).toHaveAttribute(
+      "href",
+      `/repositories/${language} second name`
+    );
+  }
+});
+```
+
+- there is a lot in this
+  - when fetching we have to analyze the data the component expects
+  - return data of similar structure
+  - shape the data so we can test it (like we customized it here)
+
+---
+
+### 79. An Issue With Fake Handlers
 
 -
 
