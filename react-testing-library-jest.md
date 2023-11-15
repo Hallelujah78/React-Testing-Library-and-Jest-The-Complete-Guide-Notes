@@ -2551,9 +2551,172 @@ test("renders two links for each language", async () => {
 
 ### 79. An Issue With Fake Handlers
 
--
+- important pattern to be warned about
+- this might be recommended in blog posts, stack overflow etc
+- common pattern
+  - handlers defined in one place but used by several tests
+  - might make one file called handlers.js that contains several fake route handlers
+  - these would be shared between multiple test files
+  - we might use the same handler in HomeRoute.test.js and RepositoryList.test.js
+  - this might seem like a good approach
+- downside
+  - if all handlers defined in the same place, then all tests are locked into getting the same response
+  - in many cases, that's not desirable
+  - we may create a new component and we want it to get a completely different response from the fake route
+- we need a way to reuse route handlers across tests, but allow different components to define or say what kind of fake response they get back
 
 ---
+
+### 80. Easier Fake Routes - Here's the goal
+
+- set up a handler that we can reuse - save on redoing boilerplate
+- allow test files to define the response they want to receive from the fake route
+- we will refactor our fake route in HomeRoute.test.js
+- goal
+  - define and call a function: `createServer`
+  - pass it an array of config objects
+  - each config object defines a fake route that components can access
+  - each config object will have path property
+    - path for incoming requests
+  - each has a method
+    - the type of requests: get, post etc
+  - each has a res function
+    - called when request received to path
+- what it looks like:
+
+```js
+createServer([
+  {
+    path: "/api/repositories",
+    method: "get",
+    res: (req, res, ctx) => {
+      return {
+        // data here
+      };
+    },
+  },
+  {
+    path: "/api/repositories",
+    method: "post",
+    res: (req, res, ctx) => {
+      return {
+        // data here
+      };
+    },
+  },
+]);
+```
+
+- result is
+  - less boilerplate
+  - easier for each test component to set up data fetching testing
+  - test components can define what they want back
+
+---
+
+### 81. Making a Reusable createServer function
+
+- create a new directory in `src` folder called `test`
+- this will hold test helper funcs
+- add a file called server.js
+- our createServer func so far:
+
+```js
+export function createServer(handlerConfig) {
+  const handlers = handlerConfig.map((config) => {
+    return rest[config.method || "get"];
+  });
+}
+```
+
+- the `rest` object has different functions on it like `rest.get`, `rest.delete` etc
+  - it specifies what kind of request to watch for
+- what we are saying with `rest[config.method || get]` is:
+  - look at the config object
+  - if there is a `method` defined, use that, otherwise use `get` as default
+- note: `rest[config.method] references a function and so we can do this:
+
+```js
+rest[config.method](config.path, (req, res, ctx) => {
+  // do stuff
+});
+```
+
+- the complete server.js code:
+
+```js
+import { setupServer } from "msw/node";
+import { rest } from "msw";
+
+export function createServer(handlerConfig) {
+  const handlers = handlerConfig.map((config) => {
+    return rest[config.method || "get"](config.path, (req, res, ctx) => {
+      return res(ctx.json(config.res(req, res, ctx)));
+    });
+  });
+  const server = setupServer(...handlers);
+  beforeAll(() => {
+    server.listen();
+  });
+  afterEach(() => {
+    server.resetHandlers();
+  });
+  afterAll(() => {
+    server.close();
+  });
+}
+```
+
+- our createServer call in HomeRoute.js
+
+```js
+createServer([
+  {
+    path: "/api/repositories",
+    res: (req, res, ctx) => {
+      const language = req.url.searchParams.get("q").split("language:")[1];
+      return {
+        items: [
+          { id: 1, full_name: `${language} first name` },
+          { id: 2, full_name: `${language} second name` },
+        ],
+      };
+    },
+  },
+]);
+```
+
+- all tests are passing
+
+---
+
+## Section 10: Tests Around Authentication
+
+### 82. Testing Authentication
+
+- testing authentication buttons in the codesplain header
+- the functionality is as follows:
+  - user comes to the site not signed in
+  - they can click sign up and create an account to sign in
+  - at this point a `sign out` button is displayed
+- the functionality is in AuthButtons.js
+- we display a link => we need to use MemoryRouter
+- there is a useUser hook which is using SWR and axios to fetch data from `/api/user`
+  - will require fetch handler to test
+- if loading - return null
+- if user - return sign out link
+- else - return sign up and sign in links
+- the goal of this section is to understand how to troubleshoot libraries in tests
+  - we'll run into a bug when testing this that is difficult to diagnose
+  - troubleshooting strategies
+- the hard part of testing is understanding and using or testing third-party libraries that are used in React projects
+- SWR is going to cause a big problem in our tests, we'll diagnose, and solve
+
+---
+
+### 83. Understanding the Auth API
+
+- ***
 
 ## Quick reference notes
 
