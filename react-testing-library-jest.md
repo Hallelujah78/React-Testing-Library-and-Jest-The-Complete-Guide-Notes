@@ -2716,7 +2716,185 @@ createServer([
 
 ### 83. Understanding the Auth API
 
+- create an AuthButtons.test.js file in the auth folder
+- imports:
+
+```js
+import { screen, render } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import { createServer } from "../../test/server";
+import AuthButtons from "./AuthButtons";
+```
+
+- what do we test?
+  - when user not signed in
+    - see sign in and sign up buttons
+    - do not see button to sign out
+- the tests outline:
+
+```js
+test("when user not signed in, we see sign up and sign in buttons", async () => {});
+
+test("when user is signed in, sign out button is visible", async () => {
+  //
+});
+
+test("when user is not signed in, sign out button is not visible", async () => {
+  //
+});
+
+test("when user is signed in, sign up and sign in buttons are not visible", async () => {
+  //
+});
+```
+
+- keeping track of the different cases (is signed in, is not signed in) is difficult
+  - this is a sign we can improve this approach
+- we'll need to figure out how the authentication api works, since we'll be checking if the user is logged in for each of these tests
+  - need to fake an api request for each test
+- looking at the network tab we see
+  - we make a GET request
+  - the request is to:
+    http://localhost:3000/api/user
+  - we get an object response:
+
+```js
+{"user": null}
+```
+
+- if we sign up, the response looks like:
+
+```js
+{"user":{id:1,email:"steve@email.com"}}
+```
+
+- user not signed in
+  - createServer() GET '/api/user' => {"user": null}
+- user is signed in
+  - createServer() GET '/api/user' => {"user": {"id": 1, "email": "user@email.com}}
+- now we have 2 sets of 2 tests that require two different responses from createServer but the tests are defined in the same file
+  - we'll see how to do this in the coming videos
+
+---
+
+### 84. Order of Execution
+
+- Stephen asks can we do this
+
+```js
+createServer(config1)
+test1(...);
+test2(...);
+createServer(config2)
+test3(...);
+test4(...);
+```
+
+- this will not work
+- jest runs non 'test' code first, so the two createServers get executed first
+- then the tests get executed
+- then the afterAll code gets executed
+- we don't want two identical api servers running at the same time
+- we want to run server 1, do our two tests, closer server 1, start server 2 and run last 2 tests
+- to do this, we need to scope test hooks
+
+---
+
+### 85. Scoping Test Hooks
+
+- we use test nesting
+- effectively like so:
+
+```js
+describe("case that applies to these tests", () => {
+  createServer(config);
+  test1();
+  test2();
+});
+```
+
+- you group tests that require the same set up in their own `describe`
+- `describe`
+  - let's us nest tests
+  - allows us to organize our tests in a file
+  - allows us to signal that tests inside the describe have a shared precondition or case
+- scopes the beforeAll, afterEach and afterAll
+  - when called in describe block, they only apply to the tests in the describe block
 - ***
+
+### 86. Act warnings ... Again!
+
+- we can use our debug pause trick again to identify elements that are loaded after data fetching is complete
+- Link components load after data fetching so we can find those with await
+
+```js
+test("we see sign up and sign in buttons", async () => {
+  renderComponent();
+  await screen.findAllByRole("link");
+});
+
+test("sign out button is not visible", async () => {
+  renderComponent();
+  await screen.findAllByRole("link");
+});
+```
+
+---
+
+### 87. Assertions Around Auth links
+
+- we'll be calling `await screen.findAllByRole('link')` in all of our tests
+  - we should move it up into the renderComponent func
+- new renderComponent:
+
+```js
+const renderComponent = async () => {
+  render(
+    <MemoryRouter>
+      <AuthButtons />
+    </MemoryRouter>
+  );
+  await screen.findAllByRole("link");
+};
+```
+
+- and we have to await our renderComponent in our tests
+
+```js
+test("sign out button is not visible", async () => {
+  await renderComponent();
+});
+```
+
+- our first test, user is not signed in
+
+```js
+test("we see sign up and sign in buttons", async () => {
+  await renderComponent();
+  const signInButton = screen.getByRole("link", { name: /sign in/i });
+  const signUpButton = screen.getByRole("link", { name: /sign up/i });
+  expect(signInButton).toBeInTheDocument();
+  expect(signInButton).toHaveAttribute("href", "/signin");
+  expect(signUpButton).toBeInTheDocument();
+  expect(signUpButton).toHaveAttribute("href", "/signup");
+});
+```
+
+- sign out button not visible
+
+```js
+test("sign out button is not visible", async () => {
+  await renderComponent();
+  const signOutButton = screen.queryByRole("link", { name: /sign out/i });
+  expect(signOutButton).not.toBeInTheDocument();
+});
+```
+
+---
+
+### 88. Wait... It Doesn't Work!?
+
+-
 
 ## Quick reference notes
 
