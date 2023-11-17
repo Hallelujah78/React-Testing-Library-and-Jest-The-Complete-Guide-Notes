@@ -2888,13 +2888,147 @@ test("sign out button is not visible", async () => {
   const signOutButton = screen.queryByRole("link", { name: /sign out/i });
   expect(signOutButton).not.toBeInTheDocument();
 });
+test("sign out button is visible", async () => {
+  await renderComponent();
+  const signOutButton = screen.getByRole("link", { name: /sign out/i });
+  expect(signOutButton).toBeInTheDocument();
+  expect(signOutButton).toHaveAttribute("href", "/signout");
+});
 ```
 
 ---
 
 ### 88. Wait... It Doesn't Work!?
 
--
+- these tests fail:
+
+```js
+test("sign up and sign in buttons are not visible", async () => {
+  await renderComponent();
+  const signInButton = screen.queryByRole("link", { name: /sign in/i });
+  const signUpButton = screen.queryByRole("link", { name: /sign up/i });
+  expect(signInButton).not.toBeInTheDocument();
+  expect(signUpButton).not.toBeInTheDocument();
+});
+test("sign out button is visible", async () => {
+  await renderComponent();
+  const signOutButton = screen.getByRole("link", { name: /sign out/i });
+  expect(signOutButton).toBeInTheDocument();
+  expect(signOutButton).toHaveAttribute("href", "/signout");
+});
+```
+
+- our tests are written correctly, but this relates to a third-party library we are using
+
+---
+
+### 89. Limiting Test Execution
+
+- There is a bug here
+- goals here are:
+  - see strategies for debugging tests
+  - understand that some libraries don't magically do what you want in a test environment
+- options for debugging tests:
+  - use `test.only` or `describe.only` to limit the number of tests executed
+  - set up a debugger
+  - using console.log
+- using `.only`
+  - since tests in second describe block are failing we can use .only to limit ourselves to running only those tests
+
+```js
+describe.only(...)
+```
+
+- when we run tests, 2 are skipped and 2 pass!
+- appears that something happening in the first describe is interfering with our tests in the second describe
+
+---
+
+### 90. Using Debuggers in Tests
+
+- can pause execution of tests or components while being run and look at variables
+- steps to set up a debugger
+  - add following to package.json:
+
+```js
+"test:debug": "react-scripts --inspect-brk test --runInBand --no-cache"
+```
+
+- add a 'debugger' statement somewhere in your tests or component
+- use a `test.only` or `describe.only` to limit the tests executed
+- run the above script command
+- navigate to about:inspect in your browser
+- we add the script
+- we add a debugger in AuthButtons after the useUser() hook call
+- we remove the `.only` from our describe
+- we run our new script `test:debug`
+- navigate to `about:inspect` and you'll see:
+
+```js
+Remote Target
+#LOCALHOST
+Target (v21.1.0)
+trace
+C:_Users_winklevi_Desktop_codesplain-starter_node_modules_react-scripts_scripts_test.js
+file:///C:/_Users_winklevi_Desktop_codesplain-starter_node_modules_react-scripts_scripts_test.js
+inspect
+```
+
+- click `inspect`
+- need to click on the blue arrow to fast forward execution to the debugger statement we added in
+- in the console tab you can type in variable names to see their values
+  - user is undefined
+  - isLoading is true
+- you can click the blue button again to fast forward to the next time the component gets rendered
+  - user is null
+  - isLoading is false
+- printing out user might be useful but we don't even know what test is running
+
+  - debugger might be useful but not clear how yet
+
+---
+
+### 91. Test Debugging in Action
+
+- we leave in the debugger statement in AuthButtons
+- in the 'sign in and sign up are visible' in AuthButtons.test, add in a test.only
+- place a debugger before the renderComponent();
+- do the same with the 'sign in and sign up are not visible' test in the second describe block
+- the debuggers we've added in will tell us which test we are running when we hit our debugger statement in our AuthButtons component
+- run `npm run test:debug`
+- about:inspect and click inspect
+- hit blue fast forward and we land in one of our tests:
+
+```js
+ test.only("we see sign up and sign in buttons", async()=>{
+                debugger ;await renderComponent();
+                ...})
+```
+
+- hit fast forward again and we're in the AuthButtons component in the context of the `we sign in and sign up buttons` test
+- we can inspect user and hit fast forward
+- isLoading is true and user is undefined and later user is null
+- fast forward again until we are in the debugger for the failing test
+- fast forward again until we are in the component in the context of the second test
+  - user is null
+  - isLoading is false
+- important to note that in the passing test, user started as undefined, and once loading was complete, it became null
+- in our failing test, user starts out as null
+- what's happening?
+  <img width="754px" height="453px" alt="diagram showing what is happening when we are testing components" src="./www.udemy.com_course_react-testing-library-and-jest_learn_lecture_35701802.png">
+- it appears that data from test 1 (the user value of null) is making its way into our second test
+- a great way to confirm this is to switch the order of the tests
+  - if we change the order of the describe blocks, we see that user has an id and email for both tests
+  - clearly data is 'leaking' from the first test to the second test
+
+---
+
+### 92. One Last Debugging hint
+
+- next steps
+  - remove all debugger statements
+  - remove `.only` occurrences
+  - make sure servers are being created and are receiving requests with console.logs
 
 ## Quick reference notes
 
