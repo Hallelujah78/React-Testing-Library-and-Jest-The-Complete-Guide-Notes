@@ -3029,6 +3029,73 @@ inspect
   - remove all debugger statements
   - remove `.only` occurrences
   - make sure servers are being created and are receiving requests with console.logs
+- inside first createServer:
+
+```js
+createServer([
+  {
+    method: "get",
+    path: "/api/user",
+    res: () => {
+      console.log("USER IS LOGGED IN");
+      return { user: { id: 1, email: "steve@email.com" } };
+    },
+  },
+]);
+```
+
+- run `npm run test`
+- we are only seeing:
+
+```js
+ FAIL  src/components/auth/AuthButtons.test.js (10.603 s)
+  ● Console
+
+    console.log
+      USER IS LOGGED IN
+```
+
+- 'USER NOT SIGNED IN' is never logged
+- this is a hint that the server is receiving requests
+- the issue must be between the component and the fake api server
+
+  - it has to be an issue in the useUser hook
+    - it's the only code that sits between api server and the component
+
+---
+
+### 93 It Is A Caching Issue!
+
+- useUser is using SWR library
+
+```js
+export default function useUser() {
+  const { data, error, isLoading } = useSWR("/api/user", userFetcher);
+
+  return {
+    user: data?.user,
+    isLoading,
+    error,
+  };
+}
+```
+
+- SWR is like a combo of useEffect and useState
+- on first render, useUser calls useSWR
+  - useSWR calls userFetcher,
+  - useFetcher calls axios.get and returns the response
+  - useSWR holds onto that data, caching it
+  - if we call useUser again, SWR returns cached data
+- this is why the tests are failing
+  - first set of tests pass, response is cached
+  - second set of tests fail because they are using the cached response from the first createServer response in the initial set of tests
+- lesson - things that are useful and desirable in production may not be that useful in test - i.e. we don't want to necessarily cache data in test
+
+---
+
+### 94. Solving the Caching Issue
+
+-
 
 ## Quick reference notes
 
