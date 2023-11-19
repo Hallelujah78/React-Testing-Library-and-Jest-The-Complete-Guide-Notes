@@ -3095,7 +3095,37 @@ export default function useUser() {
 
 ### 94. Solving the Caching Issue
 
--
+- how to solve this 'on your own'
+  - maybe go off and Google 'swr reset cache'
+  - you'll find SWR docs and there is a link for resetting cache between test cases
+    - seems relevant!
+- need to wrap your component:
+
+```js
+render(
+  <SWRConfig value={{ provider: () => new Map() }}>
+    <App />
+  </SWRConfig>
+);
+```
+
+- import swrconfig and wrap:
+
+```js
+import { SWRConfig } from "swr";
+const renderComponent = async () => {
+  render(
+    <SWRConfig value={{ provider: () => new Map() }}>
+      <MemoryRouter>
+        <AuthButtons />
+      </MemoryRouter>
+    </SWRConfig>
+  );
+  await screen.findAllByRole("link");
+};
+```
+
+- all tests are passing
 
 ## Quick reference notes
 
